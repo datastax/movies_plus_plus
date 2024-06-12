@@ -8,11 +8,11 @@ export default function Home() {
   const [result] = useUIState();
   return (
     <main
-      className={`mx-auto py-8 ${
+      className={`mx-auto w-full py-8 ${
         !result.length ? "flex items-center h-screen" : ""
       }`}
     >
-      <header className="flex items-center gap-32 px-8">
+      <header className="flex w-full items-center gap-32 px-8">
         <Logo />
         <SearchForm shouldShowSuggestions={!result.length} />
       </header>
