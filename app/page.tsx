@@ -1,46 +1,24 @@
 "use client";
 
-import { LinkIcon } from "./LinkIcon";
+import { useUIState } from "ai/rsc";
 import { Logo } from "./Logo";
 import { SearchForm } from "./SearchForm";
-import { jetbrainsMono } from "./fonts";
-
-const movies = Array.from({ length: 0 }, () => ({
-  Series_Title: "Baz",
-  Poster_Url: "https://picsum.photos/230/330?q=" + (() => Math.random())(),
-}));
 
 export default function Home() {
+  const [result] = useUIState();
   return (
     <main
       className={`mx-auto py-8 ${
-        movies.length === 0 ? "flex items-center h-screen" : ""
+        !result.length ? "flex items-center h-screen" : ""
       }`}
     >
-      <header className="flex items-center gap-32">
+      <header className="flex items-center gap-32 px-8">
         <Logo />
-        <SearchForm shouldShowSuggestions={!movies.length} />
+        <SearchForm shouldShowSuggestions={!result.length} />
       </header>
-      <div className="grid grid-cols-4 gap-8 py-8">
-        {movies.map((m) => (
-          <figure className="grid gap-2">
-            <img
-              className="rounded-lg w-full"
-              alt={m.Series_Title}
-              src={m.Poster_Url}
-            />
-            <figcaption className="grid gap-1">
-              <span className="text-white font-bold">{m.Series_Title}</span>
-              <span
-                className={`flex items-center text-sm text-[grey] gap-1 ${jetbrainsMono.className}`}
-              >
-                <LinkIcon />
-                Source
-              </span>
-            </figcaption>
-          </figure>
-        ))}
-      </div>
+      {result.length > 0 && (
+        <div className="p-8">{result.map((m: any) => m.display)}</div>
+      )}
     </main>
   );
 }

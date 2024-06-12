@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { sora } from "./fonts";
+import { Ai } from "./Ai";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -13,12 +14,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${sora.className} bg-black flex items-center text-white`}
-      >
-        {children}
-      </body>
-    </html>
+    <Ai>
+      <html lang="en">
+        <body
+          className={`${sora.className} bg-black flex items-center text-white`}
+        >
+          {children}
+        </body>
+      </html>
+    </Ai>
   );
 }
