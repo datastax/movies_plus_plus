@@ -17,7 +17,9 @@ export default function Home() {
         <SearchForm shouldShowSuggestions={!result.length} />
       </header>
       {result.length > 0 && (
-        <div className="p-8">{result.map((m: any) => m.display)}</div>
+        <div className="p-8 grid gap-8 grid-cols-4">
+          {result.map((m: any) => m.display)}
+        </div>
       )}
     </main>
   );

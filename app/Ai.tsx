@@ -4,6 +4,8 @@ import { nanoid } from "ai";
 import { createAI, getMutableAIState, streamUI } from "ai/rsc";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
+import { DataAPIClient } from "@datastax/astra-db-ts";
+import { Movie } from "./Movie";
 
 export const Ai = createAI({
   actions: {
@@ -20,22 +22,26 @@ export const Ai = createAI({
             description: "Tell the user about movies that match the prompt",
             generate: async function* ({ prompt }) {
               yield "Searching...";
-              const responseFromLangflow = await fetch(
-                "http://127.0.0.1:7863/api/v1/run/e291a07a-4335-435b-9da5-eb8508b9c4aa",
-                {
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    input_value: prompt,
-                  }),
-                  method: "POST",
-                }
-              )
-                .then((r) => r.json())
-                .then((d) => d.outputs[0].outputs[0].results.result);
+              const client = new DataAPIClient(
+                process.env.ASTRA_DB_APPLICATION_TOKEN!
+              );
+              const db = client.db(process.env.ASTRA_DB_API_ENDPOINT!);
+              const movies = await db
+                .collection("movies")
+                .find({}, { vectorize: prompt, limit: 8 })
+                .toArray();
 
-              return responseFromLangflow;
+              return movies.map((m) => (
+                <a
+                  target="_blank"
+                  href={`https://www.themoviedb.org/movie/${m._id}}`}
+                >
+                  <Movie
+                    title={m.Series_Title}
+                    posterUrl={`https://image.tmdb.org/t/p/w500${m.poster_path}`}
+                  />
+                </a>
+              ));
             },
           },
         },
