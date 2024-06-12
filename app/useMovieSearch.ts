@@ -8,7 +8,7 @@ export function useMovieSearch() {
     search: async (prompt: string) => {
       setConversation((oldState: any) => [
         ...oldState,
-        { role: "user", display: prompt },
+        { role: "user", content: prompt },
       ]);
       const response = await continueConversation({
         role: "user",
