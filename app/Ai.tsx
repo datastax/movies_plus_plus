@@ -6,6 +6,7 @@ import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { DataAPIClient } from "@datastax/astra-db-ts";
 import { Movie } from "./Movie";
+import { Movies } from "./Movies";
 
 export const Ai = createAI({
   actions: {
@@ -26,22 +27,12 @@ export const Ai = createAI({
                 process.env.ASTRA_DB_APPLICATION_TOKEN!
               );
               const db = client.db(process.env.ASTRA_DB_API_ENDPOINT!);
-              const movies = await db
+              const movies: any = await db
                 .collection("movies")
                 .find({}, { vectorize: prompt, limit: 8 })
                 .toArray();
 
-              return movies.map((m) => (
-                <a
-                  target="_blank"
-                  href={`https://www.themoviedb.org/movie/${m._id}}`}
-                >
-                  <Movie
-                    title={m.Series_Title}
-                    posterUrl={`https://image.tmdb.org/t/p/w500${m.poster_path}`}
-                  />
-                </a>
-              ));
+              return <Movies movies={movies} />;
             },
           },
         },
