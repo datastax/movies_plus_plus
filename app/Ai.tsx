@@ -96,7 +96,12 @@ export const Ai = createAI({
                   width="100%"
                   controls
                   height="auto"
-                  style={{ height: "auto", aspectRatio: "16/9" }}
+                  style={{
+                    height: "auto",
+                    flexShrink: 0,
+                    flexGrow: 1,
+                    aspectRatio: "16/9",
+                  }}
                   playing
                   url={`https://www.youtube-nocookie.com/embed/${trailer}`}
                 />
