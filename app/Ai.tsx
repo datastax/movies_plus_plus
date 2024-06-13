@@ -40,7 +40,7 @@ export const Ai = createAI({
                 </div>
               );
               const movies = await fetch(
-                "http://127.0.0.1:7863/api/v1/run/e291a07a-4335-435b-9da5-eb8508b9c4aa?stream=false",
+                "http://127.0.0.1:7863/api/v1/run/6c0d548b-21a9-4b76-b2f2-5ee314131b25?stream=false",
                 {
                   method: "post",
                   headers: {
@@ -129,7 +129,7 @@ export const Ai = createAI({
                   {},
                   {
                     vectorize: lastLangflowResponse,
-                    limit: 8,
+                    limit: 4,
                   }
                 )
                 .toArray();
