@@ -5,7 +5,7 @@ export function Markdown({ children }: { children: string }) {
     <ReactMarkdown
       components={{
         ol: ({ children }) => (
-          <ol className="list-decimal list-inside grid gap-4">{children}</ol>
+          <ol className="list-inside grid gap-4">{children}</ol>
         ),
         ul: ({ children }) => (
           <ul className="list-inside grid gap-4">{children}</ul>
