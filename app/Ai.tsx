@@ -26,40 +26,6 @@ export const Ai = createAI({
           return <Markdown>{content}</Markdown>;
         },
         tools: {
-          getMovies: {
-            description:
-              "A tool used to get a list of movies matching a user's query",
-            parameters: z.object({
-              query: z.string(),
-            }),
-            generate: async function* ({ query }) {
-              console.log("Looking for movies", { query });
-              yield (
-                <div className="flex items-center gap-4">
-                  <IntegrationSpinner /> Asking Langflow...
-                </div>
-              );
-              const movies = await fetch(
-                process.env.LANGFLOW_URL!,
-                {
-                  method: "post",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    input_value: query,
-                  }),
-                }
-              )
-                .then((r) => r.json())
-                .then((d) => d.outputs[0].outputs[0].results.message.text);
-
-              lastLangflowResponse = movies;
-              //console.log(movies)
-
-              return <Markdown>{movies}</Markdown>;
-            },
-          },
           showTrailer: {
             description: "When the user asks for a trailer, use this tool",
             parameters: z.object({
@@ -140,8 +106,10 @@ export const Ai = createAI({
                 </div>
               );
               // parse the Langflow response to get the movie titles
-              const titles = lastLangflowResponse.split("\n").map((m: string) => m.substring(2));
-              console.log(titles)
+              const titles = lastLangflowResponse
+                .split("\n")
+                .map((m: string) => m.substring(2));
+              console.log(titles);
               const client = new DataAPIClient(
                 process.env.ASTRA_DB_APPLICATION_TOKEN!
               );
@@ -149,13 +117,13 @@ export const Ai = createAI({
               const movies: any = await db
                 .collection("movies")
                 .find(
-                  { title: { $in: titles }},
+                  { title: { $in: titles } },
                   {
                     limit: 4,
                   }
                 )
                 .toArray();
-              console.log(movies)
+              console.log(movies);
               return <Movies movies={movies} />;
             },
           },
