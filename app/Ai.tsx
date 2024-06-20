@@ -21,6 +21,7 @@ export const Ai = createAI({
         messages: [...history.get(), { role: "user", content }],
         text: ({ content, done }) => {
           if (done) {
+            lastLangflowResponse = content;
             history.done([...history.get(), { role: "assistant", content }]);
           }
           return <Markdown>{content}</Markdown>;
