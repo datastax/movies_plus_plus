@@ -52,9 +52,10 @@ export const Ai = createAI({
                 }
               )
                 .then((r) => r.json())
-                .then((d) => d.outputs[0].outputs[0].results.result);
+                .then((d) => d.outputs[0].outputs[0].results.message.text);
 
               lastLangflowResponse = movies;
+              //console.log(movies)
 
               return <Markdown>{movies}</Markdown>;
             },
@@ -87,7 +88,7 @@ export const Ai = createAI({
                 `https://api.themoviedb.org/3/movie/${movie._id}/videos?language=en-US&api_key=${process.env.TMDB_API_KEY}`
               )
                 .then((r) => r.json())
-                .then((d) => d.results[0].key);
+                .then((d) => d.results.find((v: { type: string; }) => v.type === "Teaser").key);
 
               return (
                 <Player
@@ -124,6 +125,9 @@ export const Ai = createAI({
                   <IntegrationSpinner /> Getting movie posters...
                 </div>
               );
+              // parse the Langflow response to get the movie titles
+              const titles = lastLangflowResponse.split("\n").map((m: string) => m.substring(2));
+              console.log(titles)
               const client = new DataAPIClient(
                 process.env.ASTRA_DB_APPLICATION_TOKEN!
               );
@@ -131,14 +135,13 @@ export const Ai = createAI({
               const movies: any = await db
                 .collection("movies")
                 .find(
-                  {},
+                  { title: { $in: titles }},
                   {
-                    vectorize: lastLangflowResponse,
                     limit: 4,
                   }
                 )
                 .toArray();
-
+              console.log(movies)
               return <Movies movies={movies} />;
             },
           },
