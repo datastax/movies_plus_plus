@@ -15,11 +15,16 @@ To get started with this project and run it locally, follow the steps below:
 4. Rename `.env.example` to `.env` and fill in the required environment variables
    - To fill this in, you'll need the following accounts:
      - [DataStax Astra](https://astra.datastax.com/)
+     - [DataStax Langflow](https://langflow.datastax.com/)
      - [OpenAI](https://platform.openai.com/)
      - [TMDB](https://www.themoviedb.org/) (Optional, just for trailers)
 5. Finally, run the project with `pnpm run dev`
 
 From here, you'll be able to run the project locally, develop against it, add features, or whatever you'd like.
+
+## Working with Langflow
+
+To use RAG with Langflow, you'll need to run Langflow. You can either do this as a [hosted cloud solution](https://langflow.datastax.com) on DataStax, or follow the [Langflow documentation](https://docs.langflow.org/) to get started running it locally.
 
 ## Contributing
 
