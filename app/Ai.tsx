@@ -80,15 +80,22 @@ export const Ai = createAI({
                 .collection("movies")
                 .findOne({}, { vectorize: movieName });
 
-              yield;
-              <div className="flex items-center gap-4">
-                <IntegrationSpinner /> Found movie, getting trailer...
-              </div>;
+              yield (
+                <div className="flex items-center gap-4">
+                  <IntegrationSpinner /> Found movie, getting trailer...
+                </div>
+              );
               const trailer = await fetch(
                 `https://api.themoviedb.org/3/movie/${movie._id}/videos?language=en-US&api_key=${process.env.TMDB_API_KEY}`
               )
                 .then((r) => r.json())
-                .then((d) => d.results.find((v: { type: string; }) => v.type === "Teaser").key);
+                .then(
+                  (d) =>
+                    d.results.find(
+                      (v: { type: string }) =>
+                        v.type === "Teaser" || v.type === "Trailer"
+                    ).key
+                );
 
               return (
                 <Player
