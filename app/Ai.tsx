@@ -96,24 +96,31 @@ export const Ai = createAI({
                         v.type === "Teaser" || v.type === "Trailer"
                     ).key
                 );
-
-              return (
-                <Player
-                  playsinline
-                  muted
-                  width="100%"
-                  controls
-                  height="auto"
-                  style={{
-                    height: "auto",
-                    flexShrink: 0,
-                    flexGrow: 1,
-                    aspectRatio: "16/9",
-                  }}
-                  playing
-                  url={`https://www.youtube-nocookie.com/embed/${trailer}`}
-                />
-              );
+              if (trailer) {
+                return (
+                  <Player
+                    playsinline
+                    muted
+                    width="100%"
+                    controls
+                    height="auto"
+                    style={{
+                      height: "auto",
+                      flexShrink: 0,
+                      flexGrow: 1,
+                      aspectRatio: "16/9",
+                    }}
+                    playing
+                    url={`https://www.youtube-nocookie.com/embed/${trailer}`}
+                  />
+                );
+              } else {
+                return (
+                  <div className="flex items-center gap-4">
+                    <p>Could not find a trailer for {movieName}</p>
+                  </div>
+                );
+              }
             },
           },
           createGenerativeUi: {
