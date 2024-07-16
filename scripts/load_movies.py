@@ -8,7 +8,7 @@ from scrub import scrub
 
 load_dotenv()
 
-with open('../movies.json') as user_file:
+with open('movies.json') as user_file:
   file_contents = user_file.read()
 
 client = DataAPIClient(os.environ["ASTRA_DB_APPLICATION_TOKEN"])
