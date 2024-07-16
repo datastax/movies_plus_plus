@@ -25,30 +25,39 @@ collection = database.get_collection("movies")
 movies = json.loads(file_contents)
 #movies = movies[:100]
 for movie in movies:
-  print(movie.get('title'))
-  loaders = UnstructuredURLLoader(urls=["https://www.themoviedb.org/movie/" + str(movie.get('id'))], mode="elements", show_progress_bar=True)
-  docs = loaders.load()
-  #print(docs)
-  content = movie.get('title') + "\n\n"
-  for doc in docs:
-    if doc.metadata['category'] == 'NarrativeText':
-        content += doc.page_content + "\n\n"
-        content = scrub(content)
-  while True:
-    try:
-      collection.update_one(
-        {'_id': movie.get('id')},
-        {'$set': {
-          'title': movie.get('title'), 
-          'poster_path': movie.get('poster_path'),
-          '$vectorize': content, 
-          'content': content, 
-          'metadata': { 'ingested': datetime.now() }
-        }},
-        upsert=True 
-      )
-    except Exception as ex:
-      print(ex)
-      print("Retrying...")
-      continue
-    break
+    print(movie.get('title'))
+    loaders = UnstructuredURLLoader(
+        urls=["https://www.themoviedb.org/movie/" + str(movie.get('id'))],
+        mode="elements",
+        show_progress_bar=True)
+
+    docs = loaders.load()
+
+    content = movie.get('title') + "\n\n"
+    for doc in docs:
+        if doc.metadata['category'] == 'NarrativeText':
+            content += doc.page_content + "\n\n"
+            content = scrub(content)
+
+    # Optionally clean the content
+    content = scrub(content)
+
+    while True:
+        try:
+            collection.update_one(
+              {'_id': movie.get('id')},
+              {'$set': {
+                'title': movie.get('title'), 
+                'poster_path': movie.get('poster_path'),
+                '$vectorize': content, 
+                'content': content, 
+                'metadata': { 'ingested': datetime.now() }
+              }},
+              upsert=True
+          )
+        except Exception as ex:
+            print(ex)
+            print("Retrying...")
+            continue
+        break
+  
