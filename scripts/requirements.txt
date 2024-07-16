@@ -1,3 +1,5 @@
 astrapy==1.4.0
 langchain_community==0.2.7
 python-dotenv==1.0.1
+unstructured==0.14.10
+unstructured-client==0.24.1
