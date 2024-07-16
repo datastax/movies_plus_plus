@@ -1,0 +1,3 @@
+astrapy==1.4.0
+langchain_community==0.2.7
+python-dotenv==1.0.1

@@ -8,7 +8,8 @@
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*
@@ -250,3 +251,8 @@ sketch
 # End of https://www.toptal.com/developers/gitignore/api/node,macos,next,typescript,react,visualstudiocode,nextjs,solidjs,qwik,mitosis,tauri
 
 .vercel
+
+### Python ###
+__pycache__/
+venv/
+.python-version
