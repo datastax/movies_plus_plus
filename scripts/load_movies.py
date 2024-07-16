@@ -1,3 +1,7 @@
+"""
+Load movies from www.themoviedb.org into an Astra Vector database 
+for use with the Movies++ app.
+"""
 import os
 import json
 from datetime import datetime
@@ -8,8 +12,11 @@ from scrub import scrub
 
 load_dotenv()
 
-with open('movies.json') as user_file:
-  file_contents = user_file.read()
+script_dir = os.path.dirname(__file__)  # Directory of the script
+file_path = os.path.join(script_dir, 'movies.json')
+
+with open(file_path) as user_file:
+    file_contents = user_file.read()
 
 client = DataAPIClient(os.environ["ASTRA_DB_APPLICATION_TOKEN"])
 database = client.get_database(os.environ["ASTRA_DB_API_ENDPOINT"])
