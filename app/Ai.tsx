@@ -80,33 +80,47 @@ export const Ai = createAI({
                 .collection("movies")
                 .findOne({}, { vectorize: movieName });
 
-              yield;
-              <div className="flex items-center gap-4">
-                <IntegrationSpinner /> Found movie, getting trailer...
-              </div>;
+              yield (
+                <div className="flex items-center gap-4">
+                  <IntegrationSpinner /> Found movie, getting trailer...
+                </div>
+              );
               const trailer = await fetch(
                 `https://api.themoviedb.org/3/movie/${movie._id}/videos?language=en-US&api_key=${process.env.TMDB_API_KEY}`
               )
                 .then((r) => r.json())
-                .then((d) => d.results.find((v: { type: string; }) => v.type === "Teaser").key);
-
-              return (
-                <Player
-                  playsinline
-                  muted
-                  width="100%"
-                  controls
-                  height="auto"
-                  style={{
-                    height: "auto",
-                    flexShrink: 0,
-                    flexGrow: 1,
-                    aspectRatio: "16/9",
-                  }}
-                  playing
-                  url={`https://www.youtube-nocookie.com/embed/${trailer}`}
-                />
-              );
+                .then(
+                  (d) =>
+                    d.results.find(
+                      (v: { type: string }) =>
+                        v.type === "Teaser" || v.type === "Trailer"
+                    ).key
+                );
+              if (trailer) {
+                return (
+                  <Player
+                    playsinline
+                    muted
+                    width="100%"
+                    controls
+                    height="auto"
+                    style={{
+                      height: "auto",
+                      flexShrink: 0,
+                      flexGrow: 1,
+                      aspectRatio: "16/9",
+                    }}
+                    playing
+                    url={`https://www.youtube-nocookie.com/embed/${trailer}`}
+                  />
+                );
+              } else {
+                return (
+                  <div className="flex items-center gap-4">
+                    <p>Could not find a trailer for {movieName}</p>
+                  </div>
+                );
+              }
             },
           },
           createGenerativeUi: {
