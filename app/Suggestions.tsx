@@ -4,7 +4,7 @@ import { jetbrainsMono } from "./fonts";
 export function Suggestions() {
    return (
       <div
-         className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${jetbrainsMono.className}`}
+         className={`grid sm-flex  overflow-x-auto md:grid-cols-3 gap-4 ${jetbrainsMono.className}`}
       >
          <Suggestion>Scary movies set in the woods</Suggestion>
          <Suggestion>Movies that feature large monsters</Suggestion>
