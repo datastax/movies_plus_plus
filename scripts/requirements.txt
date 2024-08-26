@@ -3,3 +3,4 @@ langchain_community==0.2.7
 python-dotenv==1.0.1
 unstructured==0.14.10
 unstructured-client==0.24.1
+nltk==3.8.1
