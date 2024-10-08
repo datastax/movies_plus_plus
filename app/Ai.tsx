@@ -17,7 +17,7 @@ export const Ai = createAI({
     continueConversation: async ({ content }: any) => {
       const history = getMutableAIState();
       const result = await streamUI({
-        model: openai("gpt-4o"),
+        model: openai("gpt-4-turbo"),
         messages: [...history.get(), { role: "user", content }],
         text: ({ content, done }) => {
           if (done) {
@@ -39,20 +39,43 @@ export const Ai = createAI({
                   <IntegrationSpinner /> Asking Langflow...
                 </div>
               );
+
+              const langflowUrl = process.env.LANGFLOW_URL!;
+              const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+              };
+              
+              // Conditionally add the Authorization header if using Astra
+              if (langflowUrl.startsWith("https://api.langflow.astra.datastax.com")) {
+                headers["Authorization"] = `Bearer ${process.env.ASTRA_DB_APPLICATION_TOKEN!}`;
+              }
+              
               const movies = await fetch(
                 process.env.LANGFLOW_URL!,
                 {
                   method: "post",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
+                  headers: headers,
                   body: JSON.stringify({
                     input_value: query,
                   }),
                 }
               )
-                .then((r) => r.json())
-                .then((d) => d.outputs[0].outputs[0].results.message.text);
+              .then(async (r) => {
+                // Check the content type of the response
+                const contentType = r.headers.get("Content-Type");
+            
+                // Handle JSON response
+                if (contentType && contentType.includes("application/json")) {
+                  return r.json();
+                } else {
+                  // If the response is not JSON, treat it as plain text
+                  const textResponse = await r.text();
+                  console.log("Non-JSON response from Langflow API at ",process.env.LANGFLOW_URL,": ", textResponse, " status: ", r.status);
+                  throw new Error("Unexpected response format. Expected JSON.");
+                }
+              })
+              // .then((d) =>{console.log("Langflow API Response:", JSON.stringify(d, null, 2)); return d})
+              .then((d) => d.outputs[0].outputs[0].results.message.text);
 
               lastLangflowResponse = movies;
               //console.log(movies)
