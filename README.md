@@ -21,7 +21,6 @@ To get started with this project and run it locally, follow the steps below:
        - Select the `text-embedding-3-small` model
        - Leave Dimensions unchanged (`1536`)
        - Change Similarity Metric to `Dot Product`
-   - "Bring my own" embedding generation method, and specfify Dimensions = `1536` , and Similarity Metric = `Dot Product`.
 5. Import `Movies RAG.json` into your Langflow instance, and do the following:
    - On the two Astra DB components, set:
      - Collection (should be named `movies`) 
