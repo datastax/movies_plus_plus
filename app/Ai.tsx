@@ -10,6 +10,7 @@ import { IntegrationSpinner } from "./IntegrationSpinner";
 import { Player } from "./Player";
 import { Markdown } from "./Markdown";
 import { ForgotPassword } from "./ForgotPassword";
+import { Map } from "./Map";
 import { OpenAI } from "openai";
 
 let lastLangflowResponse = "";
@@ -91,6 +92,14 @@ export const Ai = createAI({
                   ))}
                 </ul>
               );
+            },
+          },
+          showMap: {
+            description:
+              "When the user asks for a location where to watch movies, use this tool",
+            parameters: z.object({}),
+            generate: async function* () {
+              return <Map />;
             },
           },
           showTrailer: {
