@@ -9,6 +9,8 @@ import { Movies } from "./Movies";
 import { IntegrationSpinner } from "./IntegrationSpinner";
 import { Player } from "./Player";
 import { Markdown } from "./Markdown";
+import { ForgotPassword } from "./ForgotPassword";
+import { OpenAI } from "openai";
 
 let lastLangflowResponse = "";
 
@@ -17,16 +19,72 @@ export const Ai = createAI({
     continueConversation: async ({ content }: any) => {
       const history = getMutableAIState();
       const result = await streamUI({
-        model: openai("gpt-4o"),
+        model: openai("gpt-4o-mini"),
         messages: [...history.get(), { role: "user", content }],
         text: ({ content, done }) => {
           if (done) {
-            lastLangflowResponse = content;
             history.done([...history.get(), { role: "assistant", content }]);
           }
           return <Markdown>{content}</Markdown>;
         },
         tools: {
+          showForgotPassword: {
+            description:
+              "When the user says they forgot their password, use this tool",
+            parameters: z.object({}),
+            generate: async function* () {
+              return <ForgotPassword />;
+            },
+          },
+          getMovies: {
+            description:
+              "A tool used to get a list of movies matching a user's query",
+            parameters: z.object({
+              query: z.string(),
+            }),
+            generate: async function* ({ query }) {
+              console.log("Looking for movies", { query });
+              yield (
+                <div className="flex items-center gap-4">
+                  <IntegrationSpinner /> Asking Langflow...
+                </div>
+              );
+              const client = new DataAPIClient(
+                process.env.ASTRA_DB_APPLICATION_TOKEN!
+              );
+              const db = client.db(process.env.ASTRA_DB_API_ENDPOINT!);
+              const vector = await new OpenAI({
+                apiKey: process.env.OPENAI_API_KEY,
+              }).embeddings
+                .create({
+                  input: query,
+                  model: "text-embedding-3-large",
+                })
+                .then((r) => r.data[0].embedding);
+              const movies: any = await db
+                .collection("movies")
+                .find(
+                  {},
+                  {
+                    vector,
+                    limit: 4,
+                  }
+                )
+                .toArray();
+
+              lastLangflowResponse = movies.map((m: any) => m.title).join("\n");
+
+              return (
+                <ul>
+                  {lastLangflowResponse.split("\n").map((movie, index) => (
+                    <li key={index}>
+                      <Markdown>{movie.trim()}</Markdown>
+                    </li>
+                  ))}
+                </ul>
+              );
+            },
+          },
           showTrailer: {
             description: "When the user asks for a trailer, use this tool",
             parameters: z.object({
@@ -43,9 +101,17 @@ export const Ai = createAI({
                   <IntegrationSpinner /> Getting more info about {movieName}...
                 </div>
               );
+              const vector = await new OpenAI({
+                apiKey: process.env.OPENAI_API_KEY,
+              }).embeddings
+                .create({
+                  input: movieName,
+                  model: "text-embedding-3-large",
+                })
+                .then((r) => r.data[0].embedding);
               const movie: any = await db
                 .collection("movies")
-                .findOne({}, { vectorize: movieName });
+                .findOne({}, { vector });
 
               yield (
                 <div className="flex items-center gap-4">
@@ -107,10 +173,7 @@ export const Ai = createAI({
                 </div>
               );
               // parse the Langflow response to get the movie titles
-              const titles = lastLangflowResponse
-                .split("\n")
-                .map((m: string) => m.substring(2));
-              console.log(titles);
+              const titles = lastLangflowResponse.split("\n");
               const client = new DataAPIClient(
                 process.env.ASTRA_DB_APPLICATION_TOKEN!
               );
@@ -124,7 +187,7 @@ export const Ai = createAI({
                   }
                 )
                 .toArray();
-              console.log(movies);
+              console.log({ movies, titles, lastLangflowResponse });
               return <Movies movies={movies} />;
             },
           },
