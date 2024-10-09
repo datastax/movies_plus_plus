@@ -74,6 +74,14 @@ export const Ai = createAI({
 
               lastLangflowResponse = movies.map((m: any) => m.title).join("\n");
 
+              history.done([
+                ...history.get(),
+                {
+                  role: "assistant",
+                  content: `Movies are: ${lastLangflowResponse}`,
+                },
+              ]);
+
               return (
                 <ul>
                   {lastLangflowResponse.split("\n").map((movie, index) => (
