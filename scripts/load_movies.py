@@ -2,6 +2,7 @@
 Load movies from www.themoviedb.org into an Astra Vector database 
 for use with the Movies++ app.
 """
+import sys
 import os
 import json
 from datetime import datetime
@@ -18,9 +19,23 @@ file_path = os.path.join(script_dir, 'movies.json')
 with open(file_path) as user_file:
     file_contents = user_file.read()
 
-client = DataAPIClient(os.environ["ASTRA_DB_APPLICATION_TOKEN"])
-database = client.get_database(os.environ["ASTRA_DB_API_ENDPOINT"])
-collection = database.get_collection("movies")
+required_env_vars = ["ASTRA_DB_APPLICATION_TOKEN", "ASTRA_DB_API_ENDPOINT"]
+for var in required_env_vars:
+    if not os.environ.get(var):
+        print(f"Error: Missing environment variable {var}")
+        sys.exit(1)
+
+try:
+    # Initialize Astra client and database
+    client = DataAPIClient(os.environ["ASTRA_DB_APPLICATION_TOKEN"])
+    database = client.get_database(os.environ["ASTRA_DB_API_ENDPOINT"])
+    collection = database.get_collection("movies")
+except Exception as ex:
+    print(f"Error initializing Astra client or accessing database/collection: {ex}")
+    sys.exit(1)
+
+print(f'collection: {collection}')
+
 
 movies = json.loads(file_contents)
 #movies = movies[:100]
