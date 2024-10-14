@@ -10,7 +10,7 @@ type Props = {
 export function Movies({ movies }: Props) {
   const [hoveredMovieIndex, setHoveredMovieIndex] = useState(-1);
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {movies.map((m, i) => (
         <a
           onMouseEnter={() => setHoveredMovieIndex(i)}

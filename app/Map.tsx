@@ -39,7 +39,7 @@ export function Map({ apiKey }: { apiKey: string }) {
 
   return (
     <iframe
-      src={`https://www.google.com/maps/embed/v1/directions?zoom=14&key=${apiKey}&origin=${origin}&mode=walking&destination=movie+theaters+near+${origin}`}
+      src={`https://www.google.com/maps/embed/v1/directions?key=${apiKey}&origin=${origin}&mode=walking&destination=movie+theaters+near+${origin}`}
       style={{ border: 0 }}
       allowFullScreen
       loading="lazy"
