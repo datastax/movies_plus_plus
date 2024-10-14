@@ -2,7 +2,7 @@
 
 https://github.com/datastax/movies_plus_plus/assets/9947422/6e739836-dc25-4834-a5aa-e341a35d1559
 
-Movies++ is a movie recommendation application that makes use of [GenAI](https://en.wikipedia.org/wiki/Generative_artificial_intelligence) to recommend movies based on natural language input. It is built on [DataStax Astra](https://astra.datastax.com/) and was demoed at [CascadiaJS](https://www.youtube.com/live/HfsNGyDQtJ4?si=XzDN5lzEcmIXncJ7&t=30203) and [DataStax's RAG++ AI Hack Night](https://www.datastax.com/events/rag-plus-plus-ai-hack-night-june-2024).
+Movies++ is a movie recommendation application that makes use of [GenAI](https://en.wikipedia.org/wiki/Generative_artificial_intelligence) to recommend movies based on natural language input. It is built on [DataStax Langflow](https://langflow.datastax.com/) and was demoed at [CascadiaJS](https://www.youtube.com/live/HfsNGyDQtJ4?si=XzDN5lzEcmIXncJ7&t=30203) and [DataStax's RAG++ AI Hack Night](https://www.datastax.com/events/rag-plus-plus-ai-hack-night-june-2024).
 
 ## Getting Started
 
@@ -40,7 +40,11 @@ When this script runs, it will ingest the data from TMDB into your Astra databas
 
 ## Working with Langflow
 
-To use RAG with Langflow, you'll need to run Langflow. You can either do this as a [hosted cloud solution](https://langflow.datastax.com) on DataStax, or follow the [Langflow documentation](https://docs.langflow.org/) to get started running it locally.
+This repo comes with a `langflow.config` file. Create a project in [DataStax Langflow](https://langflow.datastax.com), and then import it from the Langflow UI.
+
+![Import a project in Langflow](./docs/import.png)
+
+From there, fill in any API keys required for OpenAI and such, and you should be able to run the flow. Finally, be sure to change the Langflow API endpoint to point to your instance in the [`Ai.tsx`](./app/Ai.tsx#L55) file.
 
 ## Contributing
 
