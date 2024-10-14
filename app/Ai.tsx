@@ -20,7 +20,7 @@ export const Ai = createAI({
     continueConversation: async ({ content }: any) => {
       const history = getMutableAIState();
       const result = await streamUI({
-        model: openai("gpt-4o-mini"),
+        model: openai("gpt-4o"),
         messages: [...history.get(), { role: "user", content }],
         text: ({ content, done }) => {
           if (done) {
@@ -50,30 +50,34 @@ export const Ai = createAI({
                   <IntegrationSpinner /> Asking Langflow...
                 </div>
               );
-              const client = new DataAPIClient(
-                process.env.ASTRA_DB_APPLICATION_TOKEN!
-              );
-              const db = client.db(process.env.ASTRA_DB_API_ENDPOINT!);
-              const vector = await new OpenAI({
-                apiKey: process.env.OPENAI_API_KEY,
-              }).embeddings
-                .create({
-                  input: query,
-                  model: "text-embedding-3-large",
-                })
-                .then((r) => r.data[0].embedding);
-              const movies: any = await db
-                .collection("movies")
-                .find(
-                  {},
-                  {
-                    vector,
-                    limit: 4,
-                  }
-                )
-                .toArray();
 
-              lastLangflowResponse = movies.map((m: any) => m.title).join("\n");
+              const langflowResponse = await fetch(
+                "https://api.langflow.astra.datastax.com/lf/7436dcd2-a480-4009-bce2-43ba959692e5/api/v1/run/movies_plus_plus?stream=false",
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    output_type: "chat",
+                    input_type: "chat",
+                    input_value: query,
+                  }),
+                }
+              )
+                .then((r) => r.json())
+                .then((d) => {
+                  const result = JSON.parse(
+                    d.outputs[0].outputs[0].results.message.data.text
+                  );
+                  console.dir(result, { depth: null });
+                  return result;
+                });
+
+              lastLangflowResponse = langflowResponse.movies
+                .map((m: any) => m.movieName)
+                .join("\n");
 
               history.done([
                 ...history.get(),
@@ -99,7 +103,7 @@ export const Ai = createAI({
               "When the user asks for a location where to watch movies, use this tool",
             parameters: z.object({}),
             generate: async function* () {
-              return <Map />;
+              return <Map apiKey={process.env.GOOGLE_MAPS_API_KEY!} />;
             },
           },
           showTrailer: {
