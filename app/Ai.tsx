@@ -68,16 +68,15 @@ export const Ai = createAI({
               )
                 .then((r) => r.json())
                 .then((d) => {
-                  const result = JSON.parse(
-                    d.outputs[0].outputs[0].results.message.data.text
-                  );
+                  console.dir({ d }, { depth: Infinity });
+                  const result =
+                    d.outputs[0].outputs[0].results.message.data.text;
+
                   console.dir(result, { depth: null });
                   return result;
                 });
 
-              lastLangflowResponse = langflowResponse.movies
-                .map((m: any) => m.movieName)
-                .join("\n");
+              lastLangflowResponse = langflowResponse;
 
               history.done([
                 ...history.get(),
