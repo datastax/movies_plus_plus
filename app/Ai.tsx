@@ -47,36 +47,25 @@ export const Ai = createAI({
               console.log("Looking for movies", { query });
               yield (
                 <div className="flex items-center gap-4">
-                  <IntegrationSpinner /> Asking Langflow...
+                  <IntegrationSpinner /> Fetching movies...
                 </div>
               );
 
-              const langflowResponse = await fetch(
-                "https://api.langflow.astra.datastax.com/lf/7436dcd2-a480-4009-bce2-43ba959692e5/api/v1/run/movies_plus_plus?stream=false",
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    output_type: "chat",
-                    input_type: "chat",
-                    input_value: query,
-                  }),
-                }
-              )
-                .then((r) => r.json())
-                .then((d) => {
-                  console.dir({ d }, { depth: Infinity });
-                  const result =
-                    d.outputs[0].outputs[0].results.message.data.text;
+              const response = await new OpenAI({
+                apiKey: process.env.OPENAI_API_KEY,
+              }).chat.completions
+                .create({
+                  model: "gpt-4o",
+                  messages: [
+                    {
+                      role: "user",
+                      content: `Show me movies ${query}. Respond with one movie per line, max 4 movies. Nothing more. No numbers, no intro, just a list of movie titles.`,
+                    },
+                  ],
+                })
+                .then((r) => r.choices[0].message.content);
 
-                  console.dir(result, { depth: null });
-                  return result;
-                });
-
-              lastLangflowResponse = langflowResponse;
+              lastLangflowResponse = response || "Nothing found";
 
               history.done([
                 ...history.get(),
@@ -111,35 +100,45 @@ export const Ai = createAI({
               movieName: z.string(),
             }),
             generate: async function* ({ movieName }) {
-              const client = new DataAPIClient(
-                process.env.ASTRA_DB_APPLICATION_TOKEN!
-              );
-              const db = client.db(process.env.ASTRA_DB_API_ENDPOINT!);
+              console.log("=== Starting movie search ===");
+              console.log(`Searching for movie: ${movieName}`);
+              const movieId = await fetch(
+                `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(
+                  movieName
+                )}&language=en-US`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+                  },
+                }
+              )
+                .then((r) => r.json())
+                .then((d) => {
+                  console.log("=== Movie search response ===");
+                  console.log(d);
+                  return d.results[0]?.id;
+                });
 
-              yield (
-                <div className="flex items-center gap-4">
-                  <IntegrationSpinner /> Getting more info about {movieName}...
-                </div>
-              );
-              const vector = await new OpenAI({
-                apiKey: process.env.OPENAI_API_KEY,
-              }).embeddings
-                .create({
-                  input: movieName,
-                  model: "text-embedding-3-large",
-                })
-                .then((r) => r.data[0].embedding);
-              const movie: any = await db
-                .collection("movies")
-                .findOne({}, { vector });
+              console.log("=== Movie ID ===");
+              console.log(movieId);
 
-              yield (
-                <div className="flex items-center gap-4">
-                  <IntegrationSpinner /> Found movie, getting trailer...
-                </div>
-              );
+              if (!movieId) {
+                console.log("=== Movie not found ===");
+                return (
+                  <div className="flex items-center gap-4">
+                    <p>Could not find a movie with the name: {movieName}</p>
+                  </div>
+                );
+              }
+
+              console.log("=== Starting trailer search ===");
               const trailer = await fetch(
-                `https://api.themoviedb.org/3/movie/${movie._id}/videos?language=en-US&api_key=${process.env.TMDB_API_KEY}`
+                `https://api.themoviedb.org/3/movie/${movieId}/videos?language=en-US`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+                  },
+                }
               )
                 .then((r) => r.json())
                 .then(
@@ -193,20 +192,57 @@ export const Ai = createAI({
                 </div>
               );
               // parse the Langflow response to get the movie titles
+              console.log("lastLangflowResponse:", lastLangflowResponse);
               const titles = lastLangflowResponse.split("\n");
-              const client = new DataAPIClient(
-                process.env.ASTRA_DB_APPLICATION_TOKEN!
-              );
-              const db = client.db(process.env.ASTRA_DB_API_ENDPOINT!);
-              const movies: any = await db
-                .collection("movies")
-                .find(
-                  { title: { $in: titles } },
-                  {
-                    limit: 4,
+              console.log("Parsed titles:", titles);
+              const movies = await Promise.all(
+                titles.slice(0, 4).map(async (title) => {
+                  console.log("Processing title:", title);
+                  const cleanedTitle = title.replace(/^\d+\.\s*/, "").trim();
+                  const url = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(
+                    cleanedTitle
+                  )}&include_adult=false&language=en-US&page=1`;
+                  console.log("Fetching from URL:", url);
+                  try {
+                    const options = {
+                      method: "GET",
+                      headers: {
+                        accept: "application/json",
+                        Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+                      },
+                    };
+                    const response = await fetch(url, options);
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    console.log("API response for", title, ":", data);
+                    if (data.results && data.results.length > 0) {
+                      const movie = data.results[0];
+                      console.log("Found movie:", movie);
+                      return {
+                        title: movie.title,
+                        poster_path: movie.poster_path,
+                        _id: movie.id.toString(),
+                      };
+                    }
+                    console.log("No movie found for:", title);
+                  } catch (error) {
+                    console.error(`Error fetching data for ${title}:`, error);
                   }
-                )
-                .toArray();
+                  return {
+                    title: "Unknown Movie",
+                    poster_path: "/placeholder.jpg",
+                    _id: "unknown",
+                  };
+                })
+              ).then((results) => {
+                const filteredResults = results.filter(Boolean);
+                console.log("Filtered movie results:", filteredResults);
+                return filteredResults;
+              });
+              console.log("Final movies array:", movies);
+
               console.log({ movies, titles, lastLangflowResponse });
               return <Movies movies={movies} />;
             },
