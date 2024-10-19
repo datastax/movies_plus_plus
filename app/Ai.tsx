@@ -4,7 +4,6 @@ import { nanoid } from "ai";
 import { createAI, getMutableAIState, streamUI } from "ai/rsc";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
-import { DataAPIClient } from "@datastax/astra-db-ts";
 import { Movies } from "./Movies";
 import { IntegrationSpinner } from "./IntegrationSpinner";
 import { Player } from "./Player";
@@ -102,6 +101,11 @@ export const Ai = createAI({
             generate: async function* ({ movieName }) {
               console.log("=== Starting movie search ===");
               console.log(`Searching for movie: ${movieName}`);
+              yield (
+                <div className="flex items-center gap-4">
+                  <IntegrationSpinner /> Searching for movie...
+                </div>
+              );
               const movieId = await fetch(
                 `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(
                   movieName
@@ -132,6 +136,11 @@ export const Ai = createAI({
               }
 
               console.log("=== Starting trailer search ===");
+              yield (
+                <div className="flex items-center gap-4">
+                  <IntegrationSpinner /> Searching for trailer...
+                </div>
+              );
               const trailer = await fetch(
                 `https://api.themoviedb.org/3/movie/${movieId}/videos?language=en-US`,
                 {
@@ -148,6 +157,15 @@ export const Ai = createAI({
                         v.type === "Teaser" || v.type === "Trailer"
                     ).key
                 );
+
+              history.done([
+                ...history.get(),
+                {
+                  role: "assistant",
+                  content: `Trailer for ${movieName}`,
+                },
+              ]);
+
               if (trailer) {
                 return (
                   <Player
