@@ -9,8 +9,18 @@ from astrapy import DataAPIClient
 from dotenv import load_dotenv
 from langchain_community.document_loaders import UnstructuredURLLoader
 from scrub import scrub
+import boto3
 
 load_dotenv()
+
+brt = boto3.client(
+    service_name="bedrock-runtime",
+    aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+    aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+    aws_session_token=os.environ["AWS_SESSION_TOKEN"],
+    region_name="us-east-1"
+)
+embedding_model = "amazon.titan-embed-text-v2:0"
 
 script_dir = os.path.dirname(__file__)  # Directory of the script
 file_path = os.path.join(script_dir, 'movies.json')
@@ -23,7 +33,7 @@ database = client.get_database(os.environ["ASTRA_DB_API_ENDPOINT"])
 collection = database.get_collection("movies")
 
 movies = json.loads(file_contents)
-#movies = movies[:100]
+# movies = movies[:100]
 for movie in movies:
     print(movie.get('title'))
     loaders = UnstructuredURLLoader(
@@ -44,12 +54,23 @@ for movie in movies:
 
     while True:
         try:
+            response = brt.invoke_model(
+                body=json.dumps({
+                    "inputText": content,
+                    "embeddingTypes": ["float"]
+                }),
+                modelId=embedding_model,
+                accept="application/json",
+                contentType="application/json",
+            )
+            response_body = json.loads(response.get('body').read())
+            
             collection.update_one(
               {'_id': movie.get('id')},
               {'$set': {
                 'title': movie.get('title'), 
                 'poster_path': movie.get('poster_path'),
-                '$vectorize': content, 
+                '$vector': response_body['embedding'], 
                 'content': content, 
                 'metadata': { 'ingested': datetime.now() }
               }},
