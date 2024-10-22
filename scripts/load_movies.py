@@ -18,7 +18,7 @@ brt = boto3.client(
     aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
     aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
     aws_session_token=os.environ["AWS_SESSION_TOKEN"],
-    region_name="us-east-1"
+    region_name=os.environ["AWS_REGION"]
 )
 embedding_model = "amazon.titan-embed-text-v2:0"
 
