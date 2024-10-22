@@ -9,9 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^0.0.51",
+    "@ai-sdk/google-vertex": "^0.0.40",
     "@ai-sdk/openai": "^0.0.27",
     "@datastax/astra-db-ts": "^1.2.1",
-    "ai": "^3.1.32",
+    "ai": "^3.4.9",
     "next": "14.2.4",
     "react": "^18",
     "react-dom": "^18",
@@ -26,5 +28,6 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
-  }
+  },
+  "packageManager": "pnpm@9.11.0+sha256.1c0e33f70e5df9eede84a357bdfa0b1f9dba6e58194628d48a1055756f553754"
 }

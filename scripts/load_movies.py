@@ -8,6 +8,7 @@ from datetime import datetime
 from astrapy import DataAPIClient
 from dotenv import load_dotenv
 from langchain_community.document_loaders import UnstructuredURLLoader
+import google.generativeai as genai
 from scrub import scrub
 
 load_dotenv()
@@ -22,8 +23,11 @@ client = DataAPIClient(os.environ["ASTRA_DB_APPLICATION_TOKEN"])
 database = client.get_database(os.environ["ASTRA_DB_API_ENDPOINT"])
 collection = database.get_collection("movies")
 
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+
+response = genai.embed_content(model="models/text-embedding-004", content="hello!")
+
 movies = json.loads(file_contents)
-#movies = movies[:100]
 for movie in movies:
     print(movie.get('title'))
     loaders = UnstructuredURLLoader(
@@ -44,12 +48,18 @@ for movie in movies:
 
     while True:
         try:
+            embedding_response = genai.embed_content(
+                model="models/text-embedding-004",
+                task_type="retrieval_query",
+                content=content
+            ) 
+            vector = embedding_response['embedding']
             collection.update_one(
               {'_id': movie.get('id')},
               {'$set': {
                 'title': movie.get('title'), 
                 'poster_path': movie.get('poster_path'),
-                '$vectorize': content, 
+                '$vector': vector,
                 'content': content, 
                 'metadata': { 'ingested': datetime.now() }
               }},

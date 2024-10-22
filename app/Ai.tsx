@@ -1,8 +1,9 @@
 "use server";
 
-import { nanoid } from "ai";
+import { nanoid, embed } from "ai";
 import { createAI, getMutableAIState, streamUI } from "ai/rsc";
-import { openai } from "@ai-sdk/openai";
+import { vertex } from "@ai-sdk/google-vertex";
+import { google } from "@ai-sdk/google";
 import { z } from "zod";
 import { DataAPIClient } from "@datastax/astra-db-ts";
 import { Movies } from "./Movies";
@@ -17,7 +18,7 @@ export const Ai = createAI({
     continueConversation: async ({ content }: any) => {
       const history = getMutableAIState();
       const result = await streamUI({
-        model: openai("gpt-4o"),
+        model: vertex("gemini-1.5-pro"),
         messages: [...history.get(), { role: "user", content }],
         text: ({ content, done }) => {
           if (done) {
@@ -76,9 +77,13 @@ export const Ai = createAI({
                   <IntegrationSpinner /> Getting more info about {movieName}...
                 </div>
               );
+              const { embedding } = await embed({
+                model: google.textEmbeddingModel("text-embedding-004"),
+                value: movieName,
+              });
               const movie: any = await db
                 .collection("movies")
-                .findOne({}, { vectorize: movieName });
+                .findOne({}, { sort: { $vector: embedding } });
 
               yield (
                 <div className="flex items-center gap-4">
@@ -132,7 +137,7 @@ export const Ai = createAI({
                 ),
             }),
             description:
-              "A tool used to generate UI in response to a user explicitly asking for UI",
+              "A tool used to generate UI in response to a user asking for UI or movie posters",
             generate: async function* () {
               yield (
                 <div className="flex items-center gap-4">
@@ -160,6 +165,7 @@ export const Ai = createAI({
             },
           },
         },
+        toolChoice: "required",
       });
 
       return {
