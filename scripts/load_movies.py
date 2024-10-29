@@ -33,7 +33,7 @@ database = client.get_database(os.environ["ASTRA_DB_API_ENDPOINT"])
 collection = database.get_collection("movies")
 
 movies = json.loads(file_contents)
-# movies = movies[:100]
+movies = movies[1:]
 for movie in movies:
     print(movie.get('title'))
     loaders = UnstructuredURLLoader(
@@ -72,7 +72,7 @@ for movie in movies:
                 'poster_path': movie.get('poster_path'),
                 '$vector': response_body['embedding'], 
                 'content': content, 
-                'metadata': { 'ingested': datetime.now() }
+                'metadata': { 'ingested': datetime.now(), '_id': movie.get('id') }
               }},
               upsert=True
           )

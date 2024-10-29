@@ -1,8 +1,9 @@
 "use server";
 
-import { nanoid } from "ai";
+import { nanoid, embed } from "ai";
 import { createAI, getMutableAIState, streamUI } from "ai/rsc";
-import { openai } from "@ai-sdk/openai";
+import { bedrock } from '@ai-sdk/amazon-bedrock';
+import { openai } from '@ai-sdk/openai';
 import { z } from "zod";
 import { DataAPIClient } from "@datastax/astra-db-ts";
 import { Movies } from "./Movies";
@@ -11,7 +12,6 @@ import { Player } from "./Player";
 import { Markdown } from "./Markdown";
 import { ForgotPassword } from "./ForgotPassword";
 import { Map } from "./Map";
-import { OpenAI } from "openai";
 
 let lastLangflowResponse = "";
 
@@ -52,7 +52,7 @@ export const Ai = createAI({
               );
 
               const langflowResponse = await fetch(
-                "https://api.langflow.astra.datastax.com/lf/7436dcd2-a480-4009-bce2-43ba959692e5/api/v1/run/movies_plus_plus?stream=false",
+                "http://localhost:7860/api/v1/run/22b19e02-b136-4c23-9dfe-74ad5e0417da?stream=false",
                 {
                   method: "POST",
                   headers: {
@@ -76,7 +76,12 @@ export const Ai = createAI({
                   return result;
                 });
 
-              lastLangflowResponse = langflowResponse;
+              const parseResponse = function(response: string) {
+                const movies = response.split("\n").filter((movie) => movie.trim() !== "" && (movie.startsWith("* ") || movie.startsWith("- "))).map(title => title.replace(/^[*-] /, "")).join("\n");
+                return movies;
+
+              }
+              lastLangflowResponse = parseResponse(langflowResponse);
 
               history.done([
                 ...history.get(),
@@ -121,17 +126,30 @@ export const Ai = createAI({
                   <IntegrationSpinner /> Getting more info about {movieName}...
                 </div>
               );
-              const vector = await new OpenAI({
-                apiKey: process.env.OPENAI_API_KEY,
-              }).embeddings
-                .create({
-                  input: movieName,
-                  model: "text-embedding-3-large",
-                })
-                .then((r) => r.data[0].embedding);
-              const movie: any = await db
-                .collection("movies")
-                .findOne({}, { vector });
+
+              const movie = await fetch(
+                "http://localhost:7860/api/v1/run/fa82b577-2ac7-4680-a7cf-fe0d076b7e7a?stream=false",
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    output_type: "chat",
+                    input_type: "chat",
+                    input_value: movieName,
+                  }),
+                }
+              )
+                .then((r) => r.json())
+                .then((d) => {
+                  const match =
+                    d.outputs[0].outputs[0].results.message.data.text.match(/'_id': (\d+)/)
+                  if (match) {
+                    return { _id: match[1] };
+                  }
+                });
 
               yield (
                 <div className="flex items-center gap-4">
@@ -193,7 +211,7 @@ export const Ai = createAI({
                 </div>
               );
               // parse the Langflow response to get the movie titles
-              const titles = lastLangflowResponse.split("\n");
+              const titles = lastLangflowResponse.split("\n").map(title => title.trim());
               const client = new DataAPIClient(
                 process.env.ASTRA_DB_APPLICATION_TOKEN!
               );

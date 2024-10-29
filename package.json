@@ -9,23 +9,25 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^0.0.30",
     "@ai-sdk/openai": "^0.0.27",
-    "@datastax/astra-db-ts": "^1.2.1",
-    "ai": "^3.1.32",
+    "@datastax/astra-db-ts": "^1.5.0",
+    "ai": "^3.4.18",
     "next": "14.2.4",
-    "openai": "^4.67.3",
-    "react": "^18",
-    "react-dom": "^18",
+    "openai": "^4.68.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-markdown": "^9.0.1",
     "react-player": "^2.16.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5"
-  }
+    "@types/node": "^20.16.14",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.3"
+  },
+  "packageManager": "pnpm@9.11.0+sha256.1c0e33f70e5df9eede84a357bdfa0b1f9dba6e58194628d48a1055756f553754"
 }
