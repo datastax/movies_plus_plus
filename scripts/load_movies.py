@@ -33,7 +33,7 @@ database = client.get_database(os.environ["ASTRA_DB_API_ENDPOINT"])
 collection = database.get_collection("movies")
 
 movies = json.loads(file_contents)
-movies = movies[1:]
+movies = movies[2:]
 for movie in movies:
     print(movie.get('title'))
     loaders = UnstructuredURLLoader(
@@ -47,11 +47,8 @@ for movie in movies:
     for doc in docs:
         if doc.metadata['category'] == 'NarrativeText':
             content += doc.page_content + "\n\n"
-            content = scrub(content)
 
-    # Optionally clean the content
     content = scrub(content)
-
     while True:
         try:
             response = brt.invoke_model(
@@ -64,7 +61,6 @@ for movie in movies:
                 contentType="application/json",
             )
             response_body = json.loads(response.get('body').read())
-            
             collection.update_one(
               {'_id': movie.get('id')},
               {'$set': {

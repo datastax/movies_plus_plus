@@ -3,7 +3,6 @@
 import { nanoid, embed } from "ai";
 import { createAI, getMutableAIState, streamUI } from "ai/rsc";
 import { bedrock } from '@ai-sdk/amazon-bedrock';
-import { openai } from '@ai-sdk/openai';
 import { z } from "zod";
 import { DataAPIClient } from "@datastax/astra-db-ts";
 import { Movies } from "./Movies";
@@ -20,11 +19,15 @@ export const Ai = createAI({
     continueConversation: async ({ content }: any) => {
       const history = getMutableAIState();
       const result = await streamUI({
-        model: openai("gpt-4o"),
+        model: bedrock('anthropic.claude-3-sonnet-20240229-v1:0'),
         messages: [...history.get(), { role: "user", content }],
         text: ({ content, done }) => {
           if (done) {
-            history.done([...history.get(), { role: "assistant", content }]);
+            history.done([
+              ...history.get(),
+              { role: "user", content },
+              { role: "assistant", content}
+            ]);
           }
           return <Markdown>{content}</Markdown>;
         },
@@ -52,7 +55,7 @@ export const Ai = createAI({
               );
 
               const langflowResponse = await fetch(
-                "http://localhost:7860/api/v1/run/22b19e02-b136-4c23-9dfe-74ad5e0417da?stream=false",
+                process.env.LANGFLOW_URL!,
                 {
                   method: "POST",
                   headers: {
@@ -85,6 +88,7 @@ export const Ai = createAI({
 
               history.done([
                 ...history.get(),
+                { role: "user", content },
                 {
                   role: "assistant",
                   content: `Movies are: ${lastLangflowResponse}`,
@@ -126,30 +130,13 @@ export const Ai = createAI({
                   <IntegrationSpinner /> Getting more info about {movieName}...
                 </div>
               );
-
-              const movie = await fetch(
-                "http://localhost:7860/api/v1/run/fa82b577-2ac7-4680-a7cf-fe0d076b7e7a?stream=false",
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    output_type: "chat",
-                    input_type: "chat",
-                    input_value: movieName,
-                  }),
-                }
-              )
-                .then((r) => r.json())
-                .then((d) => {
-                  const match =
-                    d.outputs[0].outputs[0].results.message.data.text.match(/'_id': (\d+)/)
-                  if (match) {
-                    return { _id: match[1] };
-                  }
-                });
+              const { embedding } = await embed({
+                model: bedrock.embedding("amazon.titan-embed-text-v2:0"),
+                value: movieName,
+              });
+              const movie: any = await db
+                .collection("movies")
+                .findOne({}, { sort: { $vector: embedding }});
 
               yield (
                 <div className="flex items-center gap-4">
@@ -225,7 +212,6 @@ export const Ai = createAI({
                   }
                 )
                 .toArray();
-              console.log({ movies, titles, lastLangflowResponse });
               return <Movies movies={movies} />;
             },
           },
