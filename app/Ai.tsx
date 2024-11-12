@@ -109,7 +109,7 @@ export const Ai = createAI({
           showMap: {
             description:
               "When the user asks for a location where to watch movies, use this tool",
-            parameters: z.object({}),
+            parameters: z.object({ movieName: z.string() }),
             generate: async function* () {
               return <Map apiKey={process.env.GOOGLE_MAPS_API_KEY!} />;
             },
