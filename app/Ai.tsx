@@ -2,7 +2,7 @@
 
 import { nanoid, embed } from "ai";
 import { createAI, getMutableAIState, streamUI } from "ai/rsc";
-import { bedrock } from '@ai-sdk/amazon-bedrock';
+import { bedrock } from "@ai-sdk/amazon-bedrock";
 import { z } from "zod";
 import { DataAPIClient } from "@datastax/astra-db-ts";
 import { Movies } from "./Movies";
@@ -19,14 +19,14 @@ export const Ai = createAI({
     continueConversation: async ({ content }: any) => {
       const history = getMutableAIState();
       const result = await streamUI({
-        model: bedrock('anthropic.claude-3-sonnet-20240229-v1:0'),
+        model: bedrock("anthropic.claude-3-sonnet-20240229-v1:0"),
         messages: [...history.get(), { role: "user", content }],
         text: ({ content, done }) => {
           if (done) {
             history.done([
               ...history.get(),
               { role: "user", content },
-              { role: "assistant", content}
+              { role: "assistant", content },
             ]);
           }
           return <Markdown>{content}</Markdown>;
@@ -54,56 +54,70 @@ export const Ai = createAI({
                 </div>
               );
 
-              const langflowResponse = await fetch(
-                process.env.LANGFLOW_URL!,
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    output_type: "chat",
-                    input_type: "chat",
-                    input_value: query,
-                  }),
+              try {
+                const langflowResponse = await fetch(
+                  process.env.LANGFLOW_URL!,
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      output_type: "chat",
+                      input_type: "chat",
+                      input_value: query,
+                    }),
+                  }
+                );
+                if (!langflowResponse.ok) {
+                  throw new Error("Failed to fetch Langflow", {
+                    cause: langflowResponse,
+                  });
                 }
-              )
-                .then((r) => r.json())
-                .then((d) => {
-                  console.dir({ d }, { depth: Infinity });
-                  const result =
-                    d.outputs[0].outputs[0].results.message.data.text;
+                const data = await langflowResponse.json();
+                const langflowResult =
+                  data.outputs[0].outputs[0].results.message.data.text;
 
-                  console.dir(result, { depth: null });
-                  return result;
-                });
+                const parseResponse = function (response: string) {
+                  const movies = response
+                    .split("\n")
+                    .filter(
+                      (movie) =>
+                        movie.trim() !== "" &&
+                        (movie.startsWith("* ") || movie.startsWith("- "))
+                    )
+                    .map((title) => title.replace(/^[*-] /, ""))
+                    .join("\n");
+                  return movies;
+                };
 
-              const parseResponse = function(response: string) {
-                const movies = response.split("\n").filter((movie) => movie.trim() !== "" && (movie.startsWith("* ") || movie.startsWith("- "))).map(title => title.replace(/^[*-] /, "")).join("\n");
-                return movies;
+                lastLangflowResponse = parseResponse(langflowResult);
 
+                history.done([
+                  ...history.get(),
+                  { role: "user", content },
+                  {
+                    role: "assistant",
+                    content: `Movies are: ${lastLangflowResponse}`,
+                  },
+                ]);
+
+                return (
+                  <ul>
+                    {lastLangflowResponse.split("\n").map((movie, index) => (
+                      <li key={index}>
+                        <Markdown>{movie.trim()}</Markdown>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              } catch (e) {
+                console.error("Failed to fetch Langflow", e);
+                return (
+                  <p>There was an issue with Langflow. Please try again.</p>
+                );
               }
-              lastLangflowResponse = parseResponse(langflowResponse);
-
-              history.done([
-                ...history.get(),
-                { role: "user", content },
-                {
-                  role: "assistant",
-                  content: `Movies are: ${lastLangflowResponse}`,
-                },
-              ]);
-
-              return (
-                <ul>
-                  {lastLangflowResponse.split("\n").map((movie, index) => (
-                    <li key={index}>
-                      <Markdown>{movie.trim()}</Markdown>
-                    </li>
-                  ))}
-                </ul>
-              );
             },
           },
           showMap: {
@@ -136,7 +150,7 @@ export const Ai = createAI({
               });
               const movie: any = await db
                 .collection("movies")
-                .findOne({}, { sort: { $vector: embedding }});
+                .findOne({}, { sort: { $vector: embedding } });
 
               yield (
                 <div className="flex items-center gap-4">
@@ -198,7 +212,9 @@ export const Ai = createAI({
                 </div>
               );
               // parse the Langflow response to get the movie titles
-              const titles = lastLangflowResponse.split("\n").map(title => title.trim());
+              const titles = lastLangflowResponse
+                .split("\n")
+                .map((title) => title.trim());
               const client = new DataAPIClient(
                 process.env.ASTRA_DB_APPLICATION_TOKEN!
               );
