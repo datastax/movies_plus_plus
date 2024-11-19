@@ -55,14 +55,15 @@ export const Ai = createAI({
               );
 
               try {
+                let headers: Record<string, string> = {"Content-Type": "application/json"};
+                if (process.env.LANGFLOW_API_KEY) {
+                  headers["Authorization"] = `Bearer ${process.env.LANGFLOW_API_KEY}`;
+                }
                 const langflowResponse = await fetch(
                   process.env.LANGFLOW_URL!,
                   {
                     method: "POST",
-                    headers: {
-                      Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}`,
-                      "Content-Type": "application/json",
-                    },
+                    headers,
                     body: JSON.stringify({
                       output_type: "chat",
                       input_type: "chat",
