@@ -1,7 +1,6 @@
-"use server";
-
-import { nanoid } from "ai";
+import { nanoid } from "nanoid";
 import { createAI, getMutableAIState, streamUI } from "ai/rsc";
+import { LangflowClient } from "@datastax/langflow-client";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { Movies } from "./Movies";
@@ -10,13 +9,13 @@ import { Player } from "./Player";
 import { Markdown } from "./Markdown";
 import { ForgotPassword } from "./ForgotPassword";
 import { Map } from "./Map";
-import { OpenAI } from "openai";
 
 let lastLangflowResponse = "";
 
 export const Ai = createAI({
   actions: {
     continueConversation: async ({ content }: any) => {
+      "use server";
       const history = getMutableAIState();
       const result = await streamUI({
         model: openai("gpt-4o"),
@@ -50,21 +49,15 @@ export const Ai = createAI({
                 </div>
               );
 
-              const response = await new OpenAI({
-                apiKey: process.env.OPENAI_API_KEY,
-              }).chat.completions
-                .create({
-                  model: "gpt-4o",
-                  messages: [
-                    {
-                      role: "user",
-                      content: `Show me movies ${query}. Respond with one movie per line, max 4 movies. Nothing more. No numbers, no intro, just a list of movie titles.`,
-                    },
-                  ],
-                })
-                .then((r) => r.choices[0].message.content);
+              const langflowClient = new LangflowClient({
+                baseUrl: process.env.LANGFLOW_BASE_URL,
+              });
+              const response = await langflowClient
+                .flow("1c28f5e0-e1f2-43b4-ac81-1f5c314569d7")
+                .run(query);
 
-              lastLangflowResponse = response || "Nothing found";
+              lastLangflowResponse =
+                response.chatOutputText() || "Nothing found";
 
               history.done([
                 ...history.get(),
